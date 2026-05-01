@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Customer{% endblock %}
+
+{% block content %}
+
+<h2>Customer</h2>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Customer Management</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+<div class="p-3 d-flex justify-content-end">
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#customerModal">
+        Add
+    </button>
+</div>
+<table id="customerTable" class="table-secondary">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+</table>
+
+<div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="customerModalLabel">Contact Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="contactForm">
+                    <div class="mb-3 hidden">
+                        <input type="text" id="customer_id" class="form-control" placeholder="Customer ID" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nameInput" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="nameInput" placeholder="Enter your name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ageInput" class="form-label">Age</label>
+                        <input type="text" class="form-control" id="ageInput" placeholder="Enter your age" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="phoneInput" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phoneInput" placeholder="Enter your phone number" required>
+                    </div>
+                    <button onclick="submitAddEditUser()" type="button" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js" integrity="sha384-7+zCNj/IqJ95wo16oMtfsKbZ9ccEh31eOz1HGyDuCQ6wgnyJNSYdrPa03rtR1zdB" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js" integrity="sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13" crossorigin="anonymous"></script>
+<script>
+let table;
+$(document).ready(function () {
+    table = $('#customerTable').DataTable({
+        ajax: {
+            url: '/customer/list',
+            dataSrc: 'customers'
+        },
+        columns: [
+            { data: 'id' },
+            { data: 'name' },
+            { data: 'phone_number' },
+            {
+                data: null,
+                render: function (data, type, row) {
+                    return `
+                        <button onclick='openEditCustomer(${JSON.stringify(row)})' class="btn btn-primary">Edit</button>
+                        <button onclick="deleteCustomer(${row.id})" class="btn btn-primary">Delete</button>
+                    `;
+                }
+            }
+        ]
+    });
+});
+
+function openAddUserModal() {
+    $('#customer_id').val('');
+    $('#nameInput').val('');
+    $('#ageInput').val('');
+    $('#phoneInput').val('');
+    $('#customerModalLabel').text('Add Customer');
+    $('#customerModal').modal('show');
+}
+function submitAddEditUser() {
+    let id = $('#customer_id').val();
+    let url = id ? `/customer/edit` : '/customer/add';
+    let method = id ? 'PUT' : 'POST';
+    
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify({
+            name: $('#nameInput').val(),
+            age: $('#ageInput').val(),
+            phone_number: $('#phoneInput').val(),
+            id: id ? parseInt(id) : undefined
+        }),
+        success: function () {
+            $('#customerModal').modal('hide');
+            table.ajax.reload();
+        }
+    });
+}
+
+function openEditCustomer(data) {
+    console.log(data);
+    $('#customer_id').val(data.id);
+    $('#nameInput').val(data.name);
+    $('#ageInput').val(data.age);
+    $('#phoneInput').val(data.phone_number);
+    $('#customerModal').modal('show');
+    $('#customerModalLabel').text('Edit Customer');
+}
+
+function deleteCustomer(id) {
+    $.ajax({
+        url: `/customer/delete`,
+        method: 'DELETE',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            id: id,
+        }),
+        success: function () {
+            table.ajax.reload();
+        }
+    });
+}
+</script>
+
+</body>
+</html>
+
+{% endblock %}
